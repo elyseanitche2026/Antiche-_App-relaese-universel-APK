@@ -1,0 +1,330 @@
+import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
+import '../models/user_profile.dart';
+import '../models/commande.dart';
+import 'order_creation_screen.dart';
+import 'qr_scanner_screen.dart';
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  UserRole _activeRole = UserRole.livreur;
+  bool _isOnline = true;
+  double _soldeWallet = 0.0; // Démarrage à 0 FCFA sans recharge préalable
+
+  final List<Commande> _sampleOrders = [
+    Commande(
+      id: 'CMD-1092',
+      commerceNom: 'Boutique Yopougon Chic',
+      adresseLivraison: 'Cocody Angré 8ème Tranche',
+      telClient: '+225 0708091011',
+      prixLivraison: 2500,
+      montantMarchandise: 15000,
+      modePaiement: PaiementMarchandise.especesLivreur,
+      qrCodeDepart: 'DEP-1092-XYZ',
+      qrCodeArrivee: 'ARR-1092-ABC',
+    ),
+    Commande(
+      id: 'CMD-1093',
+      commerceNom: 'Marché Plateau Express',
+      adresseLivraison: 'Treichville Avenue 16',
+      telClient: '+225 0504030201',
+      prixLivraison: 2000,
+      montantMarchandise: 8000,
+      modePaiement: PaiementMarchandise.dejaPayeEnLigne,
+      qrCodeDepart: 'DEP-1093-DEF',
+      qrCodeArrivee: 'ARR-1093-GHI',
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.local_shipping_rounded, color: AppTheme.secondaryColor),
+            const SizedBox(width: 8),
+            Text(_activeRole == UserRole.livreur ? 'ANITCHÉ - LIVREUR' : 'ANITCHÉ - COMMERÇANT'),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(_activeRole == UserRole.livreur ? Icons.storefront : Icons.two_wheeler),
+            tooltip: 'Changer de mode',
+            onPressed: () {
+              setState(() {
+                _activeRole = _activeRole == UserRole.livreur ? UserRole.commercant : UserRole.livreur;
+              });
+            },
+          )
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildRoleBanner(),
+            const SizedBox(height: 16),
+            if (_activeRole == UserRole.livreur) ...[
+              _buildWalletCard(),
+              const SizedBox(height: 16),
+              _buildOnlineToggle(),
+              const SizedBox(height: 24),
+              _buildSectionTitle('Commandes disponibles à proximité'),
+            ] else ...[
+              _buildCommercantHeader(),
+              const SizedBox(height: 24),
+              _buildSectionTitle('Vos commandes émisses'),
+            ],
+            const SizedBox(height: 12),
+            _buildOrdersList(),
+          ],
+        ),
+      ),
+      floatingActionButton: _activeRole == UserRole.commercant
+          ? FloatingActionButton.extended(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const OrderCreationScreen()),
+                );
+              },
+              backgroundColor: AppTheme.accentOrange,
+              icon: const Icon(Icons.add_shopping_cart, color: Colors.white),
+              label: const Text('Nouvelle Course', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            )
+          : null,
+    );
+  }
+
+  Widget _buildRoleBanner() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryColor.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            _activeRole == UserRole.livreur ? Icons.motorcycle : Icons.store,
+            color: AppTheme.primaryColor,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              _activeRole == UserRole.livreur
+                  ? 'Espace Livreur • Protocole Scan & Reveal'
+                  : 'Espace Commerçant • Création & Suivi',
+              style: const TextStyle(fontWeight: FontWeight.w600, color: AppTheme.primaryColor),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWalletCard() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Solde Portefeuille (Wallet)', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${_soldeWallet.toStringAsFixed(0)} FCFA',
+                      style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.check_circle, size: 14, color: Colors.green),
+                      SizedBox(width: 4),
+                      Text('Sans dépôt initial', style: TextStyle(color: Colors.green, fontSize: 11, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildStatItem('Gains du jour', '0 FCFA'),
+                _buildStatItem('Part Livreur', '90%'),
+                _buildStatItem('Commission App', '10%'),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatItem(String label, String value) {
+    return Column(
+      children: [
+        Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppTheme.textColor)),
+        const SizedBox(height: 2),
+        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+      ],
+    );
+  }
+
+  Widget _buildOnlineToggle() {
+    return Card(
+      color: _isOnline ? Colors.green.shade50 : Colors.grey.shade100,
+      child: SwitchListTile(
+        title: Text(
+          _isOnline ? 'Statut : DISPONIBLE (En ligne)' : 'Statut : HORS LIGNE',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: _isOnline ? Colors.green.shade900 : Colors.grey.shade700,
+          ),
+        ),
+        subtitle: Text(_isOnline ? 'Vous recevez les notifications de courses' : 'Passez en ligne pour recevoir des courses'),
+        value: _isOnline,
+        activeColor: Colors.green,
+        onChanged: (val) {
+          setState(() {
+            _isOnline = val;
+          });
+        },
+      ),
+    );
+  }
+
+  Widget _buildCommercantHeader() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 28,
+              backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+              child: const Icon(Icons.store, color: AppTheme.primaryColor, size: 30),
+            ),
+            const SizedBox(width: 16),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Boutique Partenaire', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  SizedBox(height: 4),
+                  Text('Expédition immédiate • QR Code sécurisé', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textColor),
+    );
+  }
+
+  Widget _buildOrdersList() {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: _sampleOrders.length,
+      itemBuilder: (context, index) {
+        final order = _sampleOrders[index];
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(order.id, style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppTheme.secondaryColor.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        order.statutLibelle,
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF8B6B00)),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                    const SizedBox(width: 6),
+                    Expanded(child: Text('Destination : ${order.adresseLivraison}', style: const TextStyle(fontSize: 14))),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    const Icon(Icons.payments, size: 16, color: Colors.grey),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Livraison : ${order.prixLivraison.toStringAsFixed(0)} FCFA  (Gain livreur 90%: ${order.gainLivreur.toStringAsFixed(0)} FCFA)',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+                const Divider(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => QRScannerScreen(commande: order, isDepart: true),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.qr_code_scanner, size: 18),
+                      label: Text(_activeRole == UserRole.livreur ? 'Scanner Départ' : 'Voir QR Départ'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}

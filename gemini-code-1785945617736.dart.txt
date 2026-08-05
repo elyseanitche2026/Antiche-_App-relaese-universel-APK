@@ -1,0 +1,21 @@
+enum UserRole { livreur, commercant, admin }
+
+class UserProfile {
+  final String id;
+  final String nomComplet;
+  final String telephone;
+  final UserRole role;
+  double soldeWallet; // Initialisé strictement à 0.00 FCFA pour les livreurs
+  bool isOnline;
+  bool kycValide;
+
+  UserProfile({
+    required this.id,
+    required this.nomComplet,
+    required this.telephone,
+    required this.role,
+    this.soldeWallet = 0.0,
+    this.isOnline = false,
+    this.kycValide = true,
+  });
+}

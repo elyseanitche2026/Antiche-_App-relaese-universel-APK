@@ -1,0 +1,57 @@
+import 'package:flutter/material.dart';
+
+class AppTheme {
+  // Charte graphique Anitché : Bleu Royal (#0A3D91) + Or (#D4AF37) / Orange Accent (#FF6B00)
+  static const Color primaryColor = Color(0xFF0A3D91);
+  static const Color secondaryColor = Color(0xFFD4AF37);
+  static const Color accentOrange = Color(0xFFFF6B00);
+  static const Color backgroundColor = Color(0xFFF8F9FA);
+  static const Color cardColor = Colors.white;
+  static const Color textColor = Color(0xFF1E293B);
+
+  static ThemeData get lightTheme {
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: primaryColor,
+        primary: primaryColor,
+        secondary: secondaryColor,
+        surface: backgroundColor,
+      ),
+      scaffoldBackgroundColor: backgroundColor,
+      appBarTheme: const AppBarTheme(
+        backgroundColor: primaryColor,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        titleTextStyle: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryColor,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          textStyle: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      cardTheme: CardTheme(
+        color: cardColor,
+        elevation: 2,
+        shadowColor: Colors.black.withOpacity(0.05),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+      ),
+    );
+  }
+}

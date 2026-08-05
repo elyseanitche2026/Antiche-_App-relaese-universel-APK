@@ -1,0 +1,47 @@
+enum CommandeStatut { creee, assigne, enCours, livre, annule }
+enum PaiementMarchandise { dejaPayeEnLigne, directCommercant, especesLivreur }
+
+class Commande {
+  final String id;
+  final String commerceNom;
+  final String adresseLivraison;
+  final String telClient;
+  final double prixLivraison;
+  final double montantMarchandise;
+  final PaiementMarchandise modePaiement;
+  final String qrCodeDepart;
+  final String qrCodeArrivee;
+  CommandeStatut statut;
+
+  Commande({
+    required this.id,
+    required this.commerceNom,
+    required this.adresseLivraison,
+    required this.telClient,
+    required this.prixLivraison,
+    required this.montantMarchandise,
+    required this.modePaiement,
+    required this.qrCodeDepart,
+    required this.qrCodeArrivee,
+    this.statut = CommandeStatut.creee,
+  });
+
+  // Règle Anitché : 90% Livreur / 10% Plateforme
+  double get gainLivreur => prixLivraison * 0.90;
+  double get commissionApp => prixLivraison * 0.10;
+
+  String get statutLibelle {
+    switch (statut) {
+      case CommandeStatut.creee:
+        return 'En attente de livreur';
+      case CommandeStatut.assigne:
+        return 'Livreur attribué';
+      case CommandeStatut.enCours:
+        return 'En cours d\'acheminement';
+      case CommandeStatut.livre:
+        return 'Livrée avec succès';
+      case CommandeStatut.annule:
+        return 'Annulée';
+    }
+  }
+}
